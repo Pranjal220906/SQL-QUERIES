@@ -1,0 +1,112 @@
+BEGIN
+FOR cur_rec IN (SELECT object_name, object_type
+FROM user_objects
+WHERE object_type IN
+('TABLE',
+'VIEW',
+'PACKAGE',
+'PROCEDURE',
+'FUNCTION',
+'SEQUENCE'
+))
+LOOP
+BEGIN
+THEN
+IF cur_rec.object_type = 'TABLE'
+EXECUTE IMMEDIATE 'DROP '
+|| cur_rec.object_type
+|| ' "'
+|| cur_rec.object_name
+|| '" CASCADE CONSTRAINTS';
+ELSE
+EXECUTE IMMEDIATE 'DROP '
+|| cur_rec.object_type
+|| ' "'
+|| cur_rec.object_name
+|| '"';
+END IF;
+EXCEPTION
+WHEN OTHERS
+THEN
+DBMS_OUTPUT.put_line ( 'FAILED: DROP '
+|| cur_rec.object_type
+|| ' "'
+|| cur_rec.object_name
+|| '"'
+);
+END;
+END LOOP;
+END;
+/
+commit;
+drop table College;
+drop table Student;
+drop table Apply;
+create table College(collegeName varchar2(10) primary key, state
+varchar2(10), enrollment int);
+create table Student(sID int primary key, sName varchar2(10), GPA
+real, sizeHS int);
+create table Apply(sID int, cName varchar2(10), major varchar2(20),
+decision char(1), primary key(sID, major, cName), constraint sID_fk
+Foreign key(sID) references Student, constraint cName_fk Foreign
+key(cName) references College);
+delete from Student;
+delete from College;
+delete from Apply;
+insert into Student values (123, 'Amy', 3.9, 1000);
+insert into Student values (234, 'Bob', 3.6, 1500);
+insert into Student values (345, 'Craig', 3.5, 500);
+insert into Student values (456, 'Doris', 3.9, 1000);
+insert into Student values (567, 'Edward', 2.9, 2000);
+insert into Student values (678, 'Fay', 3.8, 200);
+insert into Student values (789, 'Gary', 3.4, 800);
+insert into Student values (987, 'Helen', 3.7, 800);
+insert into Student values (876, 'Irene', 3.9, 400);
+insert into Student values (765, 'Jay', 2.9, 1500);
+insert into Student values (654, 'Amy', 3.9, 1000);
+insert into Student values (543, 'Craig', 3.4, 2000);
+insert into College values ('Stanford', 'CA', 15000);
+insert into College values ('Berkeley', 'CA', 36000);
+insert into College values ('MIT', 'MA', 10000);
+insert into College values ('Cornell', 'NY', 21000);
+insert into College values ('Harvard', 'MA', 50040);
+insert into Apply values (123, 'Stanford', 'CS', 'Y');
+insert into Apply values (123, 'Stanford', 'EE', 'N');
+insert into Apply values (123, 'Berkeley', 'CS', 'Y');
+insert into Apply values (123, 'Cornell', 'EE', 'Y');
+insert into Apply values (234, 'Berkeley', 'biology', 'N');
+insert into Apply values (345, 'MIT', 'bioengineering', 'Y');
+insert into Apply values (345, 'Cornell', 'bioengineering', 'N');
+insert into Apply values (345, 'Cornell', 'CS', 'Y');
+insert into Apply values (345, 'Cornell', 'EE', 'N');
+insert into Apply values (678, 'Stanford', 'history', 'Y');
+insert into Apply values (987, 'Stanford', 'CS', 'Y');
+insert into Apply values (987, 'Berkeley', 'CS', 'Y');
+insert into Apply values (876, 'Stanford', 'CS', 'N');
+insert into Apply values (876, 'MIT', 'biology', 'Y');
+insert into Apply values (876, 'MIT', 'marine biology', 'N');
+insert into Apply values (765, 'Stanford', 'history', 'Y');
+insert into Apply values (765, 'Cornell', 'history', 'N');
+insert into Apply values (765, 'Cornell', 'psychology', 'Y');
+insert into Apply values (543, 'MIT', 'CS', 'N');
+commit;
+SELECT * from student;
+SELECT * from Apply;
+SELECT student.sID, student.sName, student.GPA, apply.cName, apply.major from student cross join Apply;
+SELECT student.sID, student.sName, student.GPA, apply.cName, apply.major from student inner join Apply on student.sID = Apply.sID;
+SELECT student.sID, student.sName, student.GPA, apply.cName, apply.major from student inner join apply on student.sID = Apply.sID;
+SELECT student.sID, student.sName, student.GPA from Student Inner join Apply on student.sID = apply.sID INNER Join College on College.collegeName = Apply.cName where College.state ='CA'  ;
+SELECT student.sID, student.sName, student.GPA, apply.cName, apply.major from student inner join apply on student.sID = apply.sID where GPA > 3.7 and Apply.cName = 'Stanford';
+SELECT student.sID, student.sName, student.GPA from Student INNER JOIN Apply on student.sID = Apply.SID Inner join College on College.COLLEGENAME = Apply.CNAME where Apply.major = 'CS' AND Apply.DECISION = 'N';
+SELECT student.sID, student.sName, student.GPA,Apply.CNAME, Apply.MAJOR from Student INNER JOIN Apply on student.sID = Apply.sID Inner join College ON College.collegeName = Apply.cName where College.state = 'NY'
+SELECT College.collegeName,College.state,College.enrollment from College left join apply on College.collegeName = apply.cName where apply.cName is null;
+SELECT * FROM College WHERE collegeName NOT IN (SELECT CName FROM Apply);
+SELECT sID FROM Apply GROUP BY sID HAVING COUNT(*)=1;
+SELECT S1.sID AS Student1,S2.sID AS Student2 FROM Student S1, Student S2 WHERE S1.GPA=S2.GPA AND S1.sID<S2.sID;
+SELECT sName,major FROM Student NATURAL JOIN Apply;
+SELECT S.* FROM Student S CROSS JOIN Apply A WHERE S.sID=A.sID AND S.sizeHS<20000 AND A.major='CS' AND A.cName='Stanford';
+SELECT * FROM Student NATURAL JOIN Apply WHERE sizeHS<20000 AND major='CS' AND cName='Stanford';
+SELECT S.* FROM Student S INNER JOIN Apply A ON S.sID=A.sID WHERE S.sizeHS<20000 AND A.major='CS' AND A.cName='Stanford';
+SELECT S.*,A.major,A.decision,C.* FROM Student S INNER JOIN Apply A ON S.sID=A.sID INNER JOIN College C ON A.cName=C.collegeName;
+SELECT S.sName,S.GPA FROM Student S INNER JOIN Apply A ON S.sID=A.sID WHERE S.sizeHS>1000 AND A.major='CS' AND A.decision='N';
+SELECT S.sName,S.GPA FROM Student S INNER JOIN Apply A ON S.sID=A.sID INNER JOIN College C ON A.cName=C.collegeName WHERE S.sizeHS>1000 AND A.major='CS' AND C.enrollment>20000 AND A.decision='N';
