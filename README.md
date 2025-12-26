@@ -1,0 +1,1 @@
+This repository contains a collection of SQL queries written for learning, practice, and revision purposes.It covers queries from basic to advanced level, useful for students, beginners, and interview preparation.
