@@ -1,0 +1,152 @@
+BEGIN
+FOR cur_rec IN (SELECT object_name, object_type
+FROM user_objects
+WHERE object_type IN
+('TABLE',
+'VIEW',
+'PACKAGE',
+'PROCEDURE',
+'FUNCTION',
+'SEQUENCE'
+))
+LOOP
+BEGIN
+THEN
+IF cur_rec.object_type = 'TABLE'
+EXECUTE IMMEDIATE 'DROP '
+|| cur_rec.object_type
+|| ' "'
+|| cur_rec.object_name
+|| '" CASCADE CONSTRAINTS';
+ELSE
+EXECUTE IMMEDIATE 'DROP '
+|| cur_rec.object_type
+|| ' "'
+|| cur_rec.object_name
+|| '"';
+END IF;
+EXCEPTION
+WHEN OTHERS
+THEN
+DBMS_OUTPUT.put_line ( 'FAILED: DROP '
+|| cur_rec.object_type
+|| ' "'
+|| cur_rec.object_name
+|| '"'
+);
+END;
+END LOOP;
+END;
+/
+commit;
+drop table College;
+drop table Student;
+drop table Apply;
+create table College(cName varchar2(10) primary key, state
+varchar2(10), enrollment int);
+create table Student(sID int primary key, sName varchar2(10), GPA
+real, sizeHS int);
+create table Apply(sID int, cName varchar2(10), major varchar2(20),
+decision char(1), primary key(sID, major, cName), constraint sID_fk
+Foreign key(sID) references Student, constraint cName_fk Foreign
+key(cName) references College);
+delete from Student;
+delete from College;
+delete from Apply;
+insert into Student values (123, 'Amy', 3.9, 1000);
+insert into Student values (234, 'Bob', 3.6, 1500);
+insert into Student values (345, 'Craig', 3.5, 500);
+insert into Student values (456, 'Doris', 3.9, 1000);
+insert into Student values (567, 'Edward', 2.9, 2000);
+insert into Student values (678, 'Fay', 3.8, 200);
+insert into Student values (789, 'Gary', 3.4, 800);
+insert into Student values (987, 'Helen', 3.7, 800);
+insert into Student values (876, 'Irene', 3.9, 400);
+insert into Student values (765, 'Jay', 2.9, 1500);
+insert into Student values (654, 'Amy', 3.9, 1000);
+insert into Student values (543, 'Craig', 3.4, 2000);
+insert into College values ('Stanford', 'CA', 15000);
+insert into College values ('Berkeley', 'CA', 36000);
+insert into College values ('MIT', 'MA', 10000);
+insert into College values ('Cornell', 'NY', 21000);
+insert into College values ('Harvard', 'MA', 50040);
+insert into Apply values (123, 'Stanford', 'CS', 'Y');
+insert into Apply values (123, 'Stanford', 'EE', 'N');
+insert into Apply values (123, 'Berkeley', 'CS', 'Y');
+insert into Apply values (123, 'Cornell', 'EE', 'Y');
+insert into Apply values (234, 'Berkeley', 'biology', 'N');
+insert into Apply values (345, 'MIT', 'bioengineering', 'Y');
+insert into Apply values (345, 'Cornell', 'bioengineering', 'N');
+insert into Apply values (345, 'Cornell', 'CS', 'Y');
+insert into Apply values (345, 'Cornell', 'EE', 'N');
+insert into Apply values (678, 'Stanford', 'history', 'Y');
+insert into Apply values (987, 'Stanford', 'CS', 'Y');
+insert into Apply values (987, 'Berkeley', 'CS', 'Y');
+insert into Apply values (876, 'Stanford', 'CS', 'N');
+insert into Apply values (876, 'MIT', 'biology', 'Y');
+insert into Apply values (876, 'MIT', 'marine biology', 'N');
+insert into Apply values (765, 'Stanford', 'history', 'Y');
+insert into Apply values (765, 'Cornell', 'history', 'N');
+insert into Apply values (765, 'Cornell', 'psychology', 'Y');
+insert into Apply values (543, 'MIT', 'CS', 'N');
+commit;
+-- Q1;
+select distinct s.sid, s.sname from student s join apply a on s.sid=a.sid where a.major='cs';
+-- Q2;
+select sid,sname from student where sizehs=(select sizehs from student where sname='jay');
+-- Q3;
+select sid,sname from student where sizehs=(select sizehs from student where sname='jay') and sname<>'jay';
+--Q4;
+select sid,sname,gpa from student where gpa<>(select gpa from student where sname='irene');
+-- Q5;
+select distinct cname from apply where sid in (select sid from student where sname like 'j%');
+-- Q6;
+select distinct major from apply where sid=(select sid from student where sname='irene');
+-- Q7;
+select distinct sid,major from apply where major in (select major from apply where sid=(select sid from student where sname='irene'));
+-- Q8;
+select distinct sid,major from apply where major in (select major from apply where sid=(select sid from student where sname='irene')) and sid<>(select sid from student where sname='irene');
+-- Q9;
+select count(distinct cname) from apply where sid=(select sid from student where sname='jay');
+-- Q10;
+select sid from apply group by sid having count(distinct cname)>=(select count(distinct cname) from apply where sid=(select sid from student where sname='jay'));
+-- Q11;
+select distinct sid from apply where major='cs' minus select distinct sid from apply where major='ee';
+-- Q12;
+select distinct c1.cname from college c1 where exists(select 1 from college c2 where c1.state=c2.state and c1.cname<>c2.cname);
+-- Q13;
+select cname from college where enrollment=(select max(enrollment) from college);
+-- Q14;
+select sname from student where gpa=(select min(gpa) from student);
+-- Q15;
+select major from apply group by major order by count(*) desc fetch first 1 row only;
+-- Q16;
+select sid,sname,sizehs from student where sizehs<>(select min(sizehs) from student);
+-- Q17;
+select s.sid,s.sname,s.sizehs from student s where not exists((select cname from apply where sid=987) minus (select cname from apply where sid=s.sid));
+
+--  Script for next part;
+
+insert into Apply
+select s1.sID, 'Berkeley', 'CSE', 'Y'
+from student s1
+where s1.sID IN (select s.sID from student s
+MINUS
+select a.sID from apply a where a.cName = 'Berkeley');
+
+-- Q18;
+select cname from college c where not exists((select sid from student) minus (select sid from apply where cname=c.cname));
+-- Q19;
+select sid from apply minus select sid from apply where cname='stanford';
+-- Q20;
+(select sid from apply where cname='stanford') intersect (select sid from apply where cname='berkeley');
+-- Q21;
+(select sname from student) union (select cname from college);
+-- Q22;
+create table applicationinfo (sid int,sname varchar2(10),number_of_applications number(2)); insert into applicationinfo select s.sid,s.sname,count(a.cname) from student s left join apply a on s.sid=a.sid group by s.sid,s.sname;
+-- Q23;
+create table applicationdata as select a.sid,c.cname,c.state from apply a join college c on a.cname=c.cname;
+-- Q24;
+update apply set decision='n' where cname='stanford' and sid in((select sid from apply where cname='stanford') intersect (select sid from apply where cname='berkeley'));
+-- Q25;
+delete from apply where cname in(select cname from college where state='ny');
