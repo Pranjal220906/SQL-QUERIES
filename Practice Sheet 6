@@ -1,0 +1,136 @@
+BEGIN
+FOR cur_rec IN (SELECT object_name, object_type
+FROM user_objects
+WHERE object_type IN
+('TABLE',
+'VIEW',
+'PACKAGE',
+'PROCEDURE',
+'FUNCTION',
+'SEQUENCE'
+))
+LOOP
+BEGIN
+THEN
+IF cur_rec.object_type = 'TABLE'
+EXECUTE IMMEDIATE 'DROP '
+|| cur_rec.object_type
+|| ' "'
+|| cur_rec.object_name
+|| '" CASCADE CONSTRAINTS';
+ELSE
+EXECUTE IMMEDIATE 'DROP '
+|| cur_rec.object_type
+|| ' "'
+|| cur_rec.object_name
+|| '"';
+END IF;
+EXCEPTION
+WHEN OTHERS
+THEN
+DBMS_OUTPUT.put_line ( 'FAILED: DROP '
+|| cur_rec.object_type
+|| ' "'
+|| cur_rec.object_name
+|| '"'
+);
+END;
+END LOOP;
+END;
+/
+commit;
+drop table College;
+drop table Student;
+drop table Apply;
+create table College(cName varchar2(10) primary key, state
+varchar2(10), enrollment int);
+create table Student(sID int primary key, sName varchar2(10), GPA
+real, sizeHS int);
+create table Apply(sID int, cName varchar2(10), major varchar2(20),
+decision char(1), primary key(sID, major, cName), constraint sID_fk
+Foreign key(sID) references Student, constraint cName_fk Foreign
+key(cName) references College);
+delete from Student;
+delete from College;
+delete from Apply;
+insert into Student values (123, 'Amy', 3.9, 1000);
+insert into Student values (234, 'Bob', 3.6, 1500);
+insert into Student values (345, 'Craig', 3.5, 500);
+insert into Student values (456, 'Doris', 3.9, 1000);
+insert into Student values (567, 'Edward', 2.9, 2000);
+insert into Student values (678, 'Fay', 3.8, 200);
+insert into Student values (789, 'Gary', 3.4, 800);
+insert into Student values (987, 'Helen', 3.7, 800);
+insert into Student values (876, 'Irene', 3.9, 400);
+insert into Student values (765, 'Jay', 2.9, 1500);
+insert into Student values (654, 'Amy', 3.9, 1000);
+insert into Student values (543, 'Craig', 3.4, 2000);
+insert into College values ('Stanford', 'CA', 15000);
+insert into College values ('Berkeley', 'CA', 36000);
+insert into College values ('MIT', 'MA', 10000);
+insert into College values ('Cornell', 'NY', 21000);
+insert into College values ('Harvard', 'MA', 50040);
+insert into Apply values (123, 'Stanford', 'CS', 'Y');
+insert into Apply values (123, 'Stanford', 'EE', 'N');
+insert into Apply values (123, 'Berkeley', 'CS', 'Y');
+insert into Apply values (123, 'Cornell', 'EE', 'Y');
+insert into Apply values (234, 'Berkeley', 'biology', 'N');
+insert into Apply values (345, 'MIT', 'bioengineering', 'Y');
+insert into Apply values (345, 'Cornell', 'bioengineering', 'N');
+insert into Apply values (345, 'Cornell', 'CS', 'Y');
+insert into Apply values (345, 'Cornell', 'EE', 'N');
+insert into Apply values (678, 'Stanford', 'history', 'Y');
+insert into Apply values (987, 'Stanford', 'CS', 'Y');
+insert into Apply values (987, 'Berkeley', 'CS', 'Y');
+insert into Apply values (876, 'Stanford', 'CS', 'N');
+insert into Apply values (876, 'MIT', 'biology', 'Y');
+insert into Apply values (876, 'MIT', 'marine biology', 'N');
+insert into Apply values (765, 'Stanford', 'history', 'Y');
+insert into Apply values (765, 'Cornell', 'history', 'N');
+insert into Apply values (765, 'Cornell', 'psychology', 'Y');
+insert into Apply values (543, 'MIT', 'CS', 'N');
+commit;
+-- Q1. Create a new column DoB in Student table. (Datatype will be date)
+Alter table student add DOB Date;
+Select * from student;
+-- Insert DoB for each Student in corresponding table using above instance of Student table.
+update student set dob = to_date('26-jun-1996','dd-mon-yyyy') where sid = 123;
+update student set dob = to_date('04-feb-1995','dd-mon-yyyy') where sid = 345;
+update student set dob = to_date('24-jul-1997','dd-mon-yyyy') where sid = 456;
+update student set dob = to_date('21-dec-1996','dd-mon-yyyy') where sid = 567;
+update student set dob = to_date('07-apr-1995','dd-mon-yyyy') where sid = 678;
+update student set dob = to_date('08-oct-1996','dd-mon-yyyy') where sid = 789;
+update student set dob = to_date('27-mar-1997','dd-mon-yyyy') where sid = 987;
+update student set dob = to_date('07-mar-1996','dd-mon-yyyy') where sid = 876;
+update student set dob = to_date('08-aug-1998','dd-mon-yyyy') where sid = 765;
+update student set dob = to_date('26-may-1996','dd-mon-yyyy') where sid = 654;
+update student set dob = to_date('27-aug-1998','dd-mon-yyyy') where sid = 543;
+update student set dob = to_date('07-apr-1995','dd-mon-yyyy') where sid = 234;
+-- Q3. Find average of GPA round off to 2 decimall places.
+Select round (SUM(GPA)/COUNT(GPA)) as "Round Average" from Student;
+-- Q4. Find year of DoB of Student having less than 1000.
+SELECT sName, EXTRACT(YEAR FROM DoB) FROM Student WHERE sizeHS < 1000;
+-- Q5.
+SELECT sName, EXTRACT(YEAR FROM SYSDATE) - EXTRACT(YEAR FROM DoB) AS Age FROM Student;
+-- Q6
+SELECT UPPER(sName), LOWER(cName) FROM Student NATURAL JOIN Apply;
+-- Q7
+SELECT sName, SUBSTR(sName,4,1) FROM Student;
+-- Q8
+SELECT sID, sName FROM Student WHERE LENGTH(sName) > 3;
+-- Q9
+SELECT FLOOR(AVG(GPA)), CEIL(AVG(GPA)), TRUNC(AVG(GPA),1) FROM Student;
+-- Q10
+SELECT * FROM Student WHERE MOD(sID,2)=0;
+-- Q11
+SELECT SQRT(900), POWER(24,7) FROM DUAL;
+-- Q12
+SELECT INSTR('Peter Piper picked a peck of pickled peppers. A peck of pickled peppers Peter Piper picked. If Peter Piper picked a peck of pickled peppers, Where the peck of pickled peppers Peter Piper picked?','pick',1,6) FROM DUAL;
+-- Q13
+SELECT TRANSLATE('Satya Nadella','adelNSty','34567812') FROM DUAL;
+-- Q14
+SELECT sID, sName, TO_CHAR(DoB,'Month DD, YYYY') FROM Student;
+-- Q15
+SELECT TO_DATE('26/02/2014','DD/MM/YYYY') FROM DUAL;
+-- Q16
+SELECT NEXT_DAY(SYSDATE,'SATURDAY'), LAST_DAY(SYSDATE) FROM DUAL;
